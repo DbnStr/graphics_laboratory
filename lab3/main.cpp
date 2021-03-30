@@ -13,15 +13,15 @@
     w/s - увеличить/уменьшить высоту пирамиды
     z/x - уменьшить/увеличить измерение нижней грани
     enter - увеличить угол вращения
+    c/v - уменьшить/увеличить число разбиений пирамиды
  */
-glm::vec3 pyramidOffset =  glm::vec3(0.1f, 0.1f, 0.f);
-
-struct BottomPlane {
+struct Plane {
     glm::vec3 topLeft;
     glm::vec3 topRight;
     glm::vec3 botRight;
     glm::vec3 botLeft;
 };
+glm::vec3 pyramidOffset =  glm::vec3(0.1f, 0.1f, 0.f);
 float angle = 0;
 float pyramidBaseEdge = 0.1f;
 float difPyramidBaseEdge = 0.01f;
@@ -29,6 +29,8 @@ float pyramidHeight = 0.2f;
 float difPyramideHeight = 0.05f;
 float lambda = 1.0f;
 float difLambda = 0.03f;
+int numberOfSplits = 100;
+int difNumberOFSplits = 1;
 
 int flag = 1;
 
@@ -58,20 +60,26 @@ void keyPressed(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_D)) {
         lambda += difLambda;
     }
-    if (glfwGetKey(window, GLFW_KEY_A) && lambda > difLambda) {
+    if (glfwGetKey(window, GLFW_KEY_A) && (lambda > difLambda)) {
         lambda -= difLambda;
     }
     if (glfwGetKey(window, GLFW_KEY_W)) {
         pyramidHeight += difPyramideHeight;
     }
-    if (glfwGetKey(window, GLFW_KEY_S) && pyramidHeight > difPyramideHeight) {
+    if (glfwGetKey(window, GLFW_KEY_S) && (pyramidHeight > difPyramideHeight)) {
         pyramidHeight -= difPyramideHeight;
     }
     if (glfwGetKey(window, GLFW_KEY_X)) {
         pyramidBaseEdge += difPyramidBaseEdge;
     }
-    if (glfwGetKey(window, GLFW_KEY_Z) && pyramidBaseEdge > difPyramidBaseEdge) {
+    if (glfwGetKey(window, GLFW_KEY_Z) && (pyramidBaseEdge > difPyramidBaseEdge)) {
         pyramidBaseEdge -= difPyramidBaseEdge;
+    }
+    if (glfwGetKey(window, GLFW_KEY_C) && (numberOfSplits > 1)) {
+        numberOfSplits -= difNumberOFSplits;
+    }
+    if (glfwGetKey(window, GLFW_KEY_V)) {
+        numberOfSplits += difNumberOFSplits;
     }
 }
 
@@ -147,68 +155,57 @@ void drawCube(float a)
     glEnd();
 }
 
-void drawTruncatedPyramid(float baseEdge, float height, float topLambda, BottomPlane *botPlane)
+void drawTruncatedPyramid(float baseEdge, float height,Plane *bottomPlane, Plane *topPlane)
 {
-    float SQRT_TWO = glm::sqrt(2.0f);
-    float centerPyramidX = baseEdge / SQRT_TWO;
-    float centerPyramidY = centerPyramidX;
-    glm::vec3 upVertex = glm::vec3(centerPyramidX, centerPyramidY, height);
-    //вершины основания пирамиды
-    glm::vec3 topLeft = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 topRight = glm::vec3(0.0f, baseEdge, 0.0f);
-    glm::vec3 botLeft = glm::vec3(baseEdge, 0.0f, 0.0f);
-    glm::vec3 botRight = glm::vec3(baseEdge, baseEdge, 0.0f);
-    
     glBegin(GL_QUADS); //основание
     glColor3f(1.0f, 0.0f, 0.0f);
-    glVertex3fv(glm::value_ptr(botPlane->topLeft));
-    glVertex3fv(glm::value_ptr(botPlane->topRight));
-    glVertex3fv(glm::value_ptr(botPlane->botRight));
-    glVertex3fv(glm::value_ptr(botPlane->botLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->topLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->topRight));
+    glVertex3fv(glm::value_ptr(bottomPlane->botRight));
+    glVertex3fv(glm::value_ptr(bottomPlane->botLeft));
     glEnd();
     
     glBegin(GL_QUADS); //задняя грань
     glColor3f(0.0f, 1.0f, 0.0f);
-    glVertex3fv(glm::value_ptr(getVector(topRight, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(topLeft, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(botPlane->topLeft));
-    glVertex3fv(glm::value_ptr(botPlane->topRight));
+    glVertex3fv(glm::value_ptr(topPlane->topRight));
+    glVertex3fv(glm::value_ptr(topPlane->topLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->topLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->topRight));
     glEnd();
     
     glBegin(GL_QUADS); //правая грань
-    if (flag % 2 == 0) {
+    if (flag++ % 2 == 0) {
         glColor3f(0.0f, 0.0f, 1.0f);
     }
     else glColor3f(1.0f, 0.0f, 0.0f);
-    flag++;
-    glVertex3fv(glm::value_ptr(getVector(botRight, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(topRight, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(botPlane->topRight));
-    glVertex3fv(glm::value_ptr(botPlane->botRight));
+    glVertex3fv(glm::value_ptr(topPlane->botRight));
+    glVertex3fv(glm::value_ptr(topPlane->topRight));
+    glVertex3fv(glm::value_ptr(bottomPlane->topRight));
+    glVertex3fv(glm::value_ptr(bottomPlane->botRight));
     glEnd();
     
     glBegin(GL_QUADS); //передняя грань
     glColor3f(1.0f, 1.0f, 0.0f);
-    glVertex3fv(glm::value_ptr(getVector(botRight, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(botLeft, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(botPlane->botLeft));
-    glVertex3fv(glm::value_ptr(botPlane->botRight));
+    glVertex3fv(glm::value_ptr(topPlane->botRight));
+    glVertex3fv(glm::value_ptr(topPlane->botLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->botLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->botRight));
     glEnd();
     
     glBegin(GL_QUADS); //левая грань
     glColor3f(1.0f, 0.0f, 1.0f);
-    glVertex3fv(glm::value_ptr(getVector(botLeft, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(topLeft, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(botPlane->topLeft));
-    glVertex3fv(glm::value_ptr(botPlane->botLeft));
+    glVertex3fv(glm::value_ptr(topPlane->botLeft));
+    glVertex3fv(glm::value_ptr(topPlane->topLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->topLeft));
+    glVertex3fv(glm::value_ptr(bottomPlane->botLeft));
     glEnd();
     
     glBegin(GL_QUADS); //верхняя грань
     glColor3f(0.0f, 1.0f, 1.0f);
-    glVertex3fv(glm::value_ptr(getVector(topRight, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(topLeft, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(botLeft, upVertex, topLambda)));
-    glVertex3fv(glm::value_ptr(getVector(botRight, upVertex, topLambda)));
+    glVertex3fv(glm::value_ptr(topPlane->topRight));
+    glVertex3fv(glm::value_ptr(topPlane->topLeft));
+    glVertex3fv(glm::value_ptr(topPlane->botLeft));
+    glVertex3fv(glm::value_ptr(topPlane->botRight));
     glEnd();
 }
 
@@ -227,32 +224,39 @@ void drawSmallCube()
 }
 
 void drawOurPiramid(float baseEdge, float height) {
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(modelMatrix, pyramidOffset);
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(angle), glm::vec3(1.f, 0.f, 0.f));
+    
+    //min bottom plane
     glm::vec3 topLeft = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 topRight = glm::vec3(0.0f, baseEdge, 0.0f);
     glm::vec3 botLeft = glm::vec3(baseEdge, 0.0f, 0.0f);
     glm::vec3 botRight = glm::vec3(baseEdge, baseEdge, 0.0f);
     
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::translate(modelMatrix, pyramidOffset);
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(angle), glm::vec3(1.f, 0.f, 0.f));
-    
-    int k = 100;
     float SQRT_TWO = glm::sqrt(2.0f);
     float centerPyramidX = baseEdge / SQRT_TWO;
     float centerPyramidY = centerPyramidX;
     glm::vec3 upVertex = glm::vec3(centerPyramidX, centerPyramidY, height);
-    for (int i = 1; i <= k; i++) {
-        float botLambda = (i - 1) * lambda / k;
-        float topLambda = i * lambda / k;
-        BottomPlane bottomplane;
+    
+    for (int i = 1; i <= numberOfSplits; i++) {
+        float botLambda = (i - 1) * lambda / numberOfSplits;
+        float topLambda = i * lambda / numberOfSplits;
+        Plane bottomplane;
         bottomplane.topLeft = getVector(topLeft, upVertex, botLambda);
         bottomplane.topRight = getVector(topRight, upVertex, botLambda);
         bottomplane.botRight = getVector(botRight, upVertex, botLambda);
         bottomplane.botLeft = getVector(botLeft, upVertex, botLambda);
         
+        Plane topPlane;
+        topPlane.topLeft = getVector(topLeft, upVertex, topLambda);
+        topPlane.topRight = getVector(topRight, upVertex, topLambda);
+        topPlane.botRight = getVector(botRight, upVertex, topLambda);
+        topPlane.botLeft = getVector(botLeft, upVertex, topLambda);
+        
         glPushMatrix();
         glMultMatrixf(glm::value_ptr(modelMatrix)); //почему не можем вынести поп матрикс за for
-        drawTruncatedPyramid(baseEdge, height, topLambda, &bottomplane);
+        drawTruncatedPyramid(baseEdge, height, &bottomplane, &topPlane);
         glPopMatrix();
     }
 }
@@ -279,9 +283,9 @@ void display(GLFWwindow* window)
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-//    glMatrixMode(GL_PROJECTION);
-//    glLoadIdentity();
-//    glMultMatrixf(glm::value_ptr(projectionMatrix));
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMultMatrixf(glm::value_ptr(projectionMatrix));
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
