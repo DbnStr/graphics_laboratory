@@ -30,6 +30,8 @@ float difPyramideHeight = 0.05f;
 float lambda = 1.0f;
 float difLambda = 0.03f;
 
+int flag = 1;
+
 float smallCubeDimension = 0.05f;
 glm::vec3 offsetSmallCube = glm::vec3(0.f, 1.f, 0.f);
 
@@ -174,7 +176,11 @@ void drawTruncatedPyramid(float baseEdge, float height, float topLambda, BottomP
     glEnd();
     
     glBegin(GL_QUADS); //правая грань
-    glColor3f(0.0f, 0.0f, 1.0f);
+    if (flag % 2 == 0) {
+        glColor3f(0.0f, 0.0f, 1.0f);
+    }
+    else glColor3f(1.0f, 0.0f, 0.0f);
+    flag++;
     glVertex3fv(glm::value_ptr(getVector(botRight, upVertex, topLambda)));
     glVertex3fv(glm::value_ptr(getVector(topRight, upVertex, topLambda)));
     glVertex3fv(glm::value_ptr(botPlane->topRight));
@@ -235,8 +241,7 @@ void drawOurPiramid(float baseEdge, float height) {
     float centerPyramidX = baseEdge / SQRT_TWO;
     float centerPyramidY = centerPyramidX;
     glm::vec3 upVertex = glm::vec3(centerPyramidX, centerPyramidY, height);
-    glPushMatrix();
-    for (int i = 1; i < k; i++) {
+    for (int i = 1; i <= k; i++) {
         float botLambda = (i - 1) * lambda / k;
         float topLambda = i * lambda / k;
         BottomPlane bottomplane;
@@ -244,11 +249,12 @@ void drawOurPiramid(float baseEdge, float height) {
         bottomplane.topRight = getVector(topRight, upVertex, botLambda);
         bottomplane.botRight = getVector(botRight, upVertex, botLambda);
         bottomplane.botLeft = getVector(botLeft, upVertex, botLambda);
+        
+        glPushMatrix();
+        glMultMatrixf(glm::value_ptr(modelMatrix)); //почему не можем вынести поп матрикс за for
         drawTruncatedPyramid(baseEdge, height, topLambda, &bottomplane);
+        glPopMatrix();
     }
-    glMultMatrixf(glm::value_ptr(modelMatrix));
-    
-    glPopMatrix();
 }
 
 void display(GLFWwindow* window)
