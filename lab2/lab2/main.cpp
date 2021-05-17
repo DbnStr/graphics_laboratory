@@ -9,6 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+bool carcassMode = false;
+
 float angle = 0;
 float mainCubeDimension = 0.1f;
 float smallCubeDimension = 0.05f;
@@ -20,6 +22,12 @@ glm::vec3 offsetSmallCube = glm::vec3(0.f, 1.f, 0.f);
 void error(int error, const char* description)
 {
     fputs(description, stderr);
+}
+
+void key(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
+        carcassMode = !carcassMode;
 }
 
 void keyPressed(GLFWwindow* window)
@@ -36,7 +44,6 @@ void keyPressed(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_G)) {
         zTranslated += 0.005f;
     }
-    
 }
 
 void drawCube(float a)
@@ -141,8 +148,8 @@ void drawMainCube() {
 void display(GLFWwindow* window)
 {
     glm::mat4 viewMatrix = glm::mat4(1.0f);
-    viewMatrix = glm::rotate(viewMatrix, glm::radians(-135.0f), glm::vec3(1.f,0.f,0.f));
-    viewMatrix = glm::rotate(viewMatrix, glm::radians(45.0f), glm::vec3(0.f,0.f,1.f));
+//    viewMatrix = glm::rotate(viewMatrix, glm::radians(-135.0f), glm::vec3(1.f,0.f,0.f));
+//    viewMatrix = glm::rotate(viewMatrix, glm::radians(45.0f), glm::vec3(0.f,0.f,1.f));
     
     glm::mat4 projectionMatrix = {
         1, 0, 0, 0,
@@ -157,8 +164,14 @@ void display(GLFWwindow* window)
     
     glfwGetFramebufferSize(window, &width, &height);
     
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, 800, 800);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    if (carcassMode) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -180,7 +193,9 @@ int main()
     if (!glfwInit())
         exit(1);
     
-    GLFWwindow* window = glfwCreateWindow(1280, 1920, "Simple example", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 800, "Simple example", NULL, NULL);
+    
+    glfwSetKeyCallback(window, key);
     
     if (!window)
     {
